@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Salary Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+    body {
+        font-family: "Poppins", sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #0d0d0d;
+        color: #e6e6e6;
+    }
+
+    .container {
+        max-width: 1100px;
+        margin: auto;
+        padding: 15px;
+    }
+
+    h2 {
+        text-align: center;
+        color: #00ffcc;
+        margin-bottom: 15px;
+        font-size: 22px;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 15px;
+    }
+
+    .card {
+        background: rgba(25, 25, 25, 0.95);
+        padding: 14px 16px; /* FIXED: perfect padding */
+        border-radius: 12px;
+        box-shadow: 0 0 15px rgba(0,255,200,0.12);
+    }
+
+    h3 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: #00ffcc;
+        font-size: 18px;
+    }
+
+    label {
+        font-size: 13px;
+        color: #bfbfbf;
+    }
+
+    input, button {
+        width: 100%;
+        padding: 9px;
+        margin: 5px 0 10px 0;
+        border-radius: 7px;
+        border: none;
+        font-size: 14px;
+        box-sizing: border-box; /* FIX: ensures perfect alignment */
+    }
+
+    input {
+        background: #1c1c1c;
+        color: #fff;
+        border: 1px solid #333;
+    }
+
+    button {
+        background: linear-gradient(90deg, #00ffaa, #00ccff);
+        color: #000;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.2s;
+        padding: 10px;
+    }
+
+    button:hover {
+        transform: scale(1.02);
+        box-shadow: 0 0 10px #00ffcc;
+    }
+
+    .orange-btn {
+        background: #ffb300;
+        color: #000;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    th {
+        background: #00cc99;
+        color: #000;
+        padding: 8px;
+        font-size: 13px;
+    }
+
+    td {
+        padding: 8px;
+        border-bottom: 1px solid #333;
+        font-size: 13px;
+    }
+
+    .summary p {
+        font-size: 15px;
+        font-weight: bold;
+        color: #00ffaa;
+        margin: 5px 0;
+    }
+
+    .action-btn {
+        padding: 5px 8px;
+        font-size: 11px;
+        border-radius: 5px;
+        box-sizing: border-box;
+    }
+
+    .edit-btn {
+        background: #4caf50;
+        color: black;
+    }
+
+    .delete-btn {
+        background: #e53935;
+        color: white;
+    }
+
+    /* MOBILE OPTIMIZATION */
+    @media (max-width: 480px) {
+        input, button {
+            padding: 8px;
+        }
+        h2 { font-size: 20px; }
+        h3 { font-size: 16px; }
+        .card { padding: 12px; }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h2>💰 Salary Tracker</h2>
+
+    <div class="grid">
+
+        <!-- Income Card -->
+        <div class="card">
+            <h3>Income</h3>
+
+            <label>Name</label>
+            <input type="text" id="incomeName">
+
+            <label>Amount</label>
+            <input type="number" id="incomeAmount">
+
+            <label>Date</label>
+            <input type="date" id="incomeDate">
+
+            <button onclick="addIncome()">Add Income</button>
+        </div>
+
+        <!-- Expense Card -->
+        <div class="card">
+            <h3>Expense</h3>
+
+            <label>Name</label>
+            <input type="text" id="expenseName">
+
+            <label>Amount</label>
+            <input type="number" id="expenseAmount">
+
+            <label>Date</label>
+            <input type="date" id="expenseDate">
+
+            <button onclick="addExpense()">Add Expense</button>
+        </div>
+
+        <!-- Date Range -->
+        <div class="card">
+            <h3>📅 Date Range</h3>
+
+            <label>From</label>
+            <input type="date" id="startDate">
+
+            <label>To</label>
+            <input type="date" id="endDate">
+
+            <button onclick="applyFilter()">Apply Filter</button>
+            <button class="orange-btn" onclick="clearFilter()">Clear</button>
+        </div>
+
+        <!-- Summary -->
+        <div class="card summary">
+            <h3>Summary</h3>
+
+            <p>Total Income: Rs <span id="totalIncome">0</span></p>
+            <p>Total Expenses: Rs <span id="totalExpense">0</span></p>
+            <p>Balance: Rs <span id="balance">0</span></p>
+        </div>
+
+    </div>
+
+    <!-- Combined Table -->
+    <div class="card" style="margin-top:15px;">
+        <h3>All Entries</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Amount</th>
+                    <th>Balance</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="entriesTable"></tbody>
+        </table>
+    </div>
+</div>
+
+
+<script>
+// Load entries
+let entries = JSON.parse(localStorage.getItem("entries")) || [];
+entries = entries.map((e, idx) => ({ id: e.id || ("e" + idx + Date.now()), ...e }));
+
+let savedRange = JSON.parse(localStorage.getItem("savedRange")) || null;
+let isFiltered = false;
+
+function getDefaultRange() {
+    const today = new Date();
+    const end = today.toISOString().substring(0, 10);
+
+    const startDate = new Date(today);
+    if (today.getDate() < 25) startDate.setMonth(startDate.getMonth() - 1);
+    startDate.setDate(25);
+
+    return { start: startDate.toISOString().substring(0, 10), end };
+}
+
+function setAutoDates() {
+    const today = new Date().toISOString().substr(0, 10);
+    incomeDate.value = today;
+    expenseDate.value = today;
+
+    const range = savedRange || getDefaultRange();
+    startDate.value = range.start;
+    endDate.value = range.end;
+}
+
+function saveEntries() {
+    localStorage.setItem("entries", JSON.stringify(entries));
+}
+
+function updateUI(filtered = null) {
+    const list = filtered ?? entries;
+
+    let totalIncome = 0, totalExpense = 0;
+    list.forEach(e => e.type === "income" ? totalIncome += e.amount : totalExpense += e.amount);
+
+    totalIncomeElem.innerText = totalIncome;
+    totalExpenseElem.innerText = totalExpense;
+    balance.innerText = totalIncome - totalExpense;
+
+    const tbody = entriesTable;
+    tbody.innerHTML = "";
+
+    let running = 0;
+    list.forEach(e => {
+        running += e.type === "income" ? e.amount : -e.amount;
+
+        tbody.innerHTML += `
+            <tr>
+                <td>${e.date}</td>
+                <td>${e.type}</td>
+                <td>${e.name}</td>
+                <td>${e.type === "income" ? "+" : "-"}${e.amount}</td>
+                <td>${running}</td>
+                <td>
+                    <button class="action-btn edit-btn" onclick="editEntry('${e.id}')">Edit</button>
+                    <button class="action-btn delete-btn" onclick="deleteEntry('${e.id}')">Delete</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function refreshView() {
+    if (isFiltered) {
+        const start = startDate.value;
+        const end = endDate.value;
+        const filtered = entries.filter(e => e.date >= start && e.date <= end);
+        updateUI(filtered);
+    } else updateUI();
+}
+
+function addIncome() {
+    const name = incomeName.value.trim();
+    const amount = Number(incomeAmount.value);
+    const date = incomeDate.value;
+
+    if (!name || !amount) return alert("Enter all income fields!");
+
+    entries.push({ id: "e" + Date.now(), type: "income", name, amount, date });
+    saveEntries();
+    incomeName.value = "";
+    incomeAmount.value = "";
+    setAutoDates();
+    refreshView();
+}
+
+function addExpense() {
+    const name = expenseName.value.trim();
+    const amount = Number(expenseAmount.value);
+    const date = expenseDate.value;
+
+    if (!name || !amount) return alert("Enter all expense fields!");
+
+    entries.push({ id: "e" + Date.now(), type: "expense", name, amount, date });
+    saveEntries();
+    expenseName.value = "";
+    expenseAmount.value = "";
+    setAutoDates();
+    refreshView();
+}
+
+function applyFilter() {
+    savedRange = { start: startDate.value, end: endDate.value };
+    localStorage.setItem("savedRange", JSON.stringify(savedRange));
+    isFiltered = true;
+
+    const filtered = entries.filter(e => e.date >= savedRange.start && e.date <= savedRange.end);
+    updateUI(filtered);
+}
+
+function clearFilter() {
+    savedRange = getDefaultRange();
+    localStorage.setItem("savedRange", JSON.stringify(savedRange));
+    isFiltered = false;
+    setAutoDates();
+    updateUI();
+}
+
+function editEntry(id) {
+    const item = entries.find(e => e.id === id);
+    if (!item) return;
+
+    const newName = prompt("Edit name:", item.name);
+    if (newName === null) return;
+
+    const newAmt = prompt("Edit amount:", item.amount);
+    if (newAmt === null) return;
+
+    const newDate = prompt("Edit date (YYYY-MM-DD):", item.date);
+    if (newDate === null) return;
+
+    item.name = newName.trim();
+    item.amount = Number(newAmt);
+    item.date = newDate;
+
+    saveEntries();
+    refreshView();
+}
+
+function deleteEntry(id) {
+    if (!confirm("Delete this entry?")) return;
+    entries = entries.filter(e => e.id !== id);
+    saveEntries();
+    refreshView();
+}
+
+// Grab elements
+const incomeName = document.getElementById("incomeName");
+const incomeAmount = document.getElementById("incomeAmount");
+const incomeDate = document.getElementById("incomeDate");
+
+const expenseName = document.getElementById("expenseName");
+const expenseAmount = document.getElementById("expenseAmount");
+const expenseDate = document.getElementById("expenseDate");
+
+const startDate = document.getElementById("startDate");
+const endDate = document.getElementById("endDate");
+
+const entriesTable = document.getElementById("entriesTable");
+const totalIncomeElem = document.getElementById("totalIncome");
+const totalExpenseElem = document.getElementById("totalExpense");
+const balance = document.getElementById("balance");
+
+// INIT
+setAutoDates();
+updateUI();
+</script>
+
+</body>
+</html>
