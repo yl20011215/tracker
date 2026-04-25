@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Salary Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- PDF Download Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+<style>
+    body {
+        font-family: "Poppins", sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #0d0d0d;
+        color: #e6e6e6;
+    }
+
+    .container {
+        max-width: 1100px;
+        margin: auto;
+        padding: 15px;
+    }
+
+    h2 {
+        text-align: center;
+        color: #00ffcc;
+        margin-bottom: 15px;
+        font-size: 22px;
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 15px;
+    }
+
+    .card {
+        background: rgba(25, 25, 25, 0.95);
+        padding: 14px 16px;
+        border-radius: 12px;
+        box-shadow: 0 0 15px rgba(0,255,200,0.12);
+    }
+
+    h3 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: #00ffcc;
+        font-size: 18px;
+    }
+
+    label {
+        font-size: 13px;
+        color: #bfbfbf;
+    }
+
+    input, select, button {
+        width: 100%;
+        padding: 9px;
+        margin: 5px 0 10px 0;
+        border-radius: 7px;
+        border: none;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+
+    input, select {
+        background: #1c1c1c;
+        color: #fff;
+        border: 1px solid #333;
+    }
+
+    button {
+        background: linear-gradient(90deg, #00ffaa, #00ccff);
+        color: #000;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.2s;
+        padding: 10px;
+    }
+
+    button:hover {
+        transform: scale(1.02);
+        box-shadow: 0 0 10px #00ffcc;
+    }
+
+    .orange-btn {
+        background: #ffb300;
+        color: #000;
+    }
+
+    .red-btn {
+        background: #e53935;
+        color: #fff;
+    }
+
+    .blue-btn {
+        background: #00ccff;
+        color: #000;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    th {
+        background: #00cc99;
+        color: #000;
+        padding: 8px;
+        font-size: 13px;
+    }
+
+    td {
+        padding: 8px;
+        border-bottom: 1px solid #333;
+        font-size: 13px;
+        text-align: center;
+    }
+
+    .summary p {
+        font-size: 15px;
+        font-weight: bold;
+        color: #00ffaa;
+        margin: 5px 0;
+    }
+
+    .action-btn {
+        padding: 5px 8px;
+        font-size: 11px;
+        border-radius: 5px;
+        box-sizing: border-box;
+        margin: 2px;
+    }
+
+    .edit-btn {
+        background: #4caf50;
+        color: black;
+    }
+
+    .delete-btn {
+        background: #e53935;
+        color: white;
+    }
+
+    .profile-title {
+        color: #ffb300;
+        font-weight: bold;
+    }
+
+    .small-note {
+        font-size: 12px;
+        color: #aaa;
+        margin-top: -5px;
+    }
+
+    @media (max-width: 480px) {
+        input, select, button {
+            padding: 8px;
+        }
+        h2 { font-size: 20px; }
+        h3 { font-size: 16px; }
+        .card { padding: 12px; }
+        table { font-size: 11px; }
+        th, td { padding: 6px; }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h2>💰 Salary Tracker</h2>
+
+    <div class="grid">
+
+        <!-- Profile Card -->
+        <div class="card">
+            <h3>📁 Salary Profile / Statement</h3>
+
+            <label>Select Profile</label>
+            <select id="profileSelect" onchange="changeProfile()"></select>
+
+            <label>New Profile Name</label>
+            <input type="text" id="profileName" placeholder="Example: April Salary">
+
+            <label>Salary / Opening Income</label>
+            <input type="number" id="profileSalary" placeholder="Example: 75000">
+
+            <label>Salary Date</label>
+            <input type="date" id="profileDate">
+
+            <button onclick="createProfile()">Create New Profile</button>
+            <button class="red-btn" onclick="deleteProfile()">Delete Current Profile</button>
+            <p class="small-note">Each profile keeps separate income and expenses. Example: April Salary and May Salary will not clash.</p>
+        </div>
+
+        <!-- Income Card -->
+        <div class="card">
+            <h3>Income</h3>
+
+            <label>Name</label>
+            <input type="text" id="incomeName">
+
+            <label>Amount</label>
+            <input type="number" id="incomeAmount">
+
+            <label>Date</label>
+            <input type="date" id="incomeDate">
+
+            <button onclick="addIncome()">Add Income</button>
+        </div>
+
+        <!-- Expense Card -->
+        <div class="card">
+            <h3>Expense</h3>
+
+            <label>Name</label>
+            <input type="text" id="expenseName">
+
+            <label>Amount</label>
+            <input type="number" id="expenseAmount">
+
+            <label>Date</label>
+            <input type="date" id="expenseDate">
+
+            <button onclick="addExpense()">Add Expense</button>
+        </div>
+
+        <!-- Date Range -->
+        <div class="card">
+            <h3>📅 Date Range</h3>
+
+            <label>From</label>
+            <input type="date" id="startDate">
+
+            <label>To</label>
+            <input type="date" id="endDate">
+
+            <button onclick="applyFilter()">Apply Filter</button>
+            <button class="orange-btn" onclick="clearFilter()">Clear</button>
+        </div>
+
+        <!-- Summary -->
+        <div class="card summary">
+            <h3>Summary</h3>
+            <p>Current Profile: <span class="profile-title" id="currentProfileName">None</span></p>
+            <p>Total Income: Rs <span id="totalIncome">0</span></p>
+            <p>Total Expenses: Rs <span id="totalExpense">0</span></p>
+            <p>Balance: Rs <span id="balance">0</span></p>
+        </div>
+
+        <!-- PDF Card -->
+        <div class="card">
+            <h3>📄 Statement PDF</h3>
+            <p class="small-note">Download the visible statement for the selected salary profile. If a date filter is applied, only filtered rows will be included.</p>
+            <button class="blue-btn" onclick="downloadPDF()">Download PDF Statement</button>
+        </div>
+
+    </div>
+
+    <!-- Combined Table -->
+    <div class="card" style="margin-top:15px; overflow-x:auto;">
+        <h3>All Entries</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Amount</th>
+                    <th>Balance</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="entriesTable"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+// ==============================
+// STORAGE STRUCTURE
+// ==============================
+// profiles = [
+//   {
+//      id: "p123",
+//      name: "April Salary",
+//      createdDate: "2026-04-25",
+//      entries: [ income / expense records ]
+//   }
+// ]
+
+let profiles = JSON.parse(localStorage.getItem("salaryProfiles")) || [];
+let activeProfileId = localStorage.getItem("activeProfileId") || null;
+let savedRange = JSON.parse(localStorage.getItem("savedRange")) || null;
+let isFiltered = false;
+let currentVisibleList = [];
+
+// ==============================
+// ELEMENTS
+// ==============================
+const profileSelect = document.getElementById("profileSelect");
+const profileName = document.getElementById("profileName");
+const profileSalary = document.getElementById("profileSalary");
+const profileDate = document.getElementById("profileDate");
+const currentProfileName = document.getElementById("currentProfileName");
+
+const incomeName = document.getElementById("incomeName");
+const incomeAmount = document.getElementById("incomeAmount");
+const incomeDate = document.getElementById("incomeDate");
+
+const expenseName = document.getElementById("expenseName");
+const expenseAmount = document.getElementById("expenseAmount");
+const expenseDate = document.getElementById("expenseDate");
+
+const startDate = document.getElementById("startDate");
+const endDate = document.getElementById("endDate");
+
+const entriesTable = document.getElementById("entriesTable");
+const totalIncomeElem = document.getElementById("totalIncome");
+const totalExpenseElem = document.getElementById("totalExpense");
+const balance = document.getElementById("balance");
+
+// ==============================
+// BASIC HELPERS
+// ==============================
+function todayDate() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    return year + "-" + month + "-" + day;
+}
+
+function generateId(prefix) {
+    return prefix + Date.now() + Math.floor(Math.random() * 1000);
+}
+
+function saveProfiles() {
+    localStorage.setItem("salaryProfiles", JSON.stringify(profiles));
+    localStorage.setItem("activeProfileId", activeProfileId || "");
+}
+
+function getActiveProfile() {
+    return profiles.find(p => p.id === activeProfileId) || null;
+}
+
+function getDefaultRange() {
+    const today = new Date();
+    const end = today.toISOString().substring(0, 10);
+
+    const startDateObj = new Date(today);
+    if (today.getDate() < 25) startDateObj.setMonth(startDateObj.getMonth() - 1);
+    startDateObj.setDate(25);
+
+    return { start: startDateObj.toISOString().substring(0, 10), end };
+}
+
+function sortEntries(entries) {
+    return [...entries].sort((a, b) => {
+        if (a.date === b.date) return a.id.localeCompare(b.id);
+        return a.date.localeCompare(b.date);
+    });
+}
+
+function formatAmount(value) {
+    const number = Number(value) || 0;
+    return number.toLocaleString("en-US");
+}
+
+function setupAmountCommaFormatting(input) {
+    input.type = "text";
+    input.inputMode = "numeric";
+
+    input.addEventListener("input", () => {
+        const cleanValue = input.value.replace(/,/g, "").replace(/[^0-9.]/g, "");
+        if (cleanValue === "") {
+            input.value = "";
+            return;
+        }
+
+        const parts = cleanValue.split(".");
+        const wholeNumber = parts[0];
+        const decimalPart = parts.length > 1 ? "." + parts.slice(1).join("") : "";
+        input.value = Number(wholeNumber).toLocaleString("en-US") + decimalPart;
+    });
+}
+
+function getInputNumber(input) {
+    return Number(input.value.replace(/,/g, ""));
+}
+
+// ==============================
+// DATE SETUP
+// ==============================
+function setAutoDates() {
+    const today = todayDate();
+    incomeDate.value = today;
+    expenseDate.value = today;
+    profileDate.value = today;
+
+    const range = savedRange || getDefaultRange();
+    startDate.value = range.start;
+    endDate.value = range.end;
+}
+
+// ==============================
+// PROFILE FUNCTIONS
+// ==============================
+function renderProfileDropdown() {
+    profileSelect.innerHTML = "";
+
+    if (profiles.length === 0) {
+        profileSelect.innerHTML = `<option value="">No profiles yet</option>`;
+        currentProfileName.innerText = "None";
+        return;
+    }
+
+    profiles.forEach(profile => {
+        const option = document.createElement("option");
+        option.value = profile.id;
+        option.textContent = profile.name;
+        if (profile.id === activeProfileId) option.selected = true;
+        profileSelect.appendChild(option);
+    });
+
+    const active = getActiveProfile();
+    currentProfileName.innerText = active ? active.name : "None";
+}
+
+function createProfile() {
+    const name = profileName.value.trim();
+    const salary = getInputNumber(profileSalary);
+    const date = profileDate.value;
+
+    if (!name) return alert("Enter profile name. Example: April Salary");
+    if (!salary || salary <= 0) return alert("Enter valid salary amount.");
+    if (!date) return alert("Select salary date.");
+
+    const profile = {
+        id: generateId("p"),
+        name,
+        createdDate: date,
+        entries: [
+            {
+                id: generateId("e"),
+                type: "income",
+                name: name,
+                amount: salary,
+                date: date
+            }
+        ]
+    };
+
+    profiles.push(profile);
+    activeProfileId = profile.id;
+
+    profileName.value = "";
+    profileSalary.value = "";
+
+    isFiltered = false;
+    savedRange = null;
+    localStorage.removeItem("savedRange");
+
+    saveProfiles();
+    renderProfileDropdown();
+    setAutoDates();
+    updateUI();
+}
+
+function changeProfile() {
+    activeProfileId = profileSelect.value;
+    isFiltered = false;
+    savedRange = null;
+    localStorage.removeItem("savedRange");
+    saveProfiles();
+    setAutoDates();
+    updateUI();
+}
+
+function deleteProfile() {
+    const active = getActiveProfile();
+    if (!active) return alert("No profile selected.");
+
+    if (!confirm(`Delete profile '${active.name}' and all its entries?`)) return;
+
+    profiles = profiles.filter(p => p.id !== activeProfileId);
+    activeProfileId = profiles.length > 0 ? profiles[0].id : null;
+
+    saveProfiles();
+    renderProfileDropdown();
+    updateUI();
+}
+
+// ==============================
+// UI UPDATE
+// ==============================
+function updateUI(filtered = null) {
+    const active = getActiveProfile();
+
+    renderProfileDropdown();
+
+    if (!active) {
+        totalIncomeElem.innerText = "0";
+        totalExpenseElem.innerText = "0";
+        balance.innerText = "0";
+        entriesTable.innerHTML = `<tr><td colspan="6">Create a salary profile first.</td></tr>`;
+        currentVisibleList = [];
+        return;
+    }
+
+    const list = sortEntries(filtered ?? active.entries);
+    currentVisibleList = list;
+
+    let totalIncome = 0;
+    let totalExpense = 0;
+
+    list.forEach(e => {
+        if (e.type === "income") totalIncome += Number(e.amount);
+        else totalExpense += Number(e.amount);
+    });
+
+    totalIncomeElem.innerText = formatAmount(totalIncome);
+    totalExpenseElem.innerText = formatAmount(totalExpense);
+    balance.innerText = formatAmount(totalIncome - totalExpense);
+
+    entriesTable.innerHTML = "";
+
+    if (list.length === 0) {
+        entriesTable.innerHTML = `<tr><td colspan="6">No entries found.</td></tr>`;
+        return;
+    }
+
+    let running = 0;
+    list.forEach(e => {
+        running += e.type === "income" ? Number(e.amount) : -Number(e.amount);
+
+        entriesTable.innerHTML += `
+            <tr>
+                <td>${e.date}</td>
+                <td>${e.type}</td>
+                <td>${e.name}</td>
+                <td>${e.type === "income" ? "+" : "-"}${formatAmount(e.amount)}</td>
+                <td>${formatAmount(running)}</td>
+                <td>
+                    <button class="action-btn edit-btn" onclick="editEntry('${e.id}')">Edit</button>
+                    <button class="action-btn delete-btn" onclick="deleteEntry('${e.id}')">Delete</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function refreshView() {
+    const active = getActiveProfile();
+    if (!active) return updateUI();
+
+    if (isFiltered) {
+        const start = startDate.value;
+        const end = endDate.value;
+        const filtered = active.entries.filter(e => e.date >= start && e.date <= end);
+        updateUI(filtered);
+    } else {
+        updateUI();
+    }
+}
+
+// ==============================
+// ADD INCOME / EXPENSE
+// ==============================
+function addIncome() {
+    const active = getActiveProfile();
+    if (!active) return alert("Create or select a salary profile first.");
+
+    const name = incomeName.value.trim();
+    const amount = getInputNumber(incomeAmount);
+    const date = incomeDate.value;
+
+    if (!name || !amount || amount <= 0 || !date) return alert("Enter all income fields correctly.");
+
+    active.entries.push({
+        id: generateId("e"),
+        type: "income",
+        name,
+        amount,
+        date
+    });
+
+    saveProfiles();
+    incomeName.value = "";
+    incomeAmount.value = "";
+    incomeDate.value = todayDate();
+    refreshView();
+}
+
+function addExpense() {
+    const active = getActiveProfile();
+    if (!active) return alert("Create or select a salary profile first.");
+
+    const name = expenseName.value.trim();
+    const amount = getInputNumber(expenseAmount);
+    const date = expenseDate.value;
+
+    if (!name || !amount || amount <= 0 || !date) return alert("Enter all expense fields correctly.");
+
+    active.entries.push({
+        id: generateId("e"),
+        type: "expense",
+        name,
+        amount,
+        date
+    });
+
+    saveProfiles();
+    expenseName.value = "";
+    expenseAmount.value = "";
+    expenseDate.value = todayDate();
+    refreshView();
+}
+
+// ==============================
+// FILTER
+// ==============================
+function applyFilter() {
+    const active = getActiveProfile();
+    if (!active) return alert("Create or select a salary profile first.");
+
+    if (!startDate.value || !endDate.value) return alert("Select both From and To dates.");
+    if (startDate.value > endDate.value) return alert("From date cannot be after To date.");
+
+    savedRange = { start: startDate.value, end: endDate.value };
+    localStorage.setItem("savedRange", JSON.stringify(savedRange));
+    isFiltered = true;
+
+    const filtered = active.entries.filter(e => e.date >= savedRange.start && e.date <= savedRange.end);
+    updateUI(filtered);
+}
+
+function clearFilter() {
+    savedRange = getDefaultRange();
+    localStorage.setItem("savedRange", JSON.stringify(savedRange));
+    isFiltered = false;
+    setAutoDates();
+    updateUI();
+}
+
+// ==============================
+// EDIT / DELETE ENTRY
+// ==============================
+function editEntry(id) {
+    const active = getActiveProfile();
+    if (!active) return;
+
+    const item = active.entries.find(e => e.id === id);
+    if (!item) return;
+
+    const newName = prompt("Edit name:", item.name);
+    if (newName === null) return;
+
+    const newAmt = prompt("Edit amount:", item.amount);
+    if (newAmt === null) return;
+
+    const newDate = prompt("Edit date (YYYY-MM-DD):", item.date);
+    if (newDate === null) return;
+
+    if (!newName.trim() || !Number(newAmt) || !newDate) {
+        return alert("Invalid entry details.");
+    }
+
+    item.name = newName.trim();
+    item.amount = Number(newAmt);
+    item.date = newDate;
+
+    saveProfiles();
+    refreshView();
+}
+
+function deleteEntry(id) {
+    const active = getActiveProfile();
+    if (!active) return;
+
+    if (!confirm("Delete this entry?")) return;
+
+    active.entries = active.entries.filter(e => e.id !== id);
+    saveProfiles();
+    refreshView();
+}
+
+// ==============================
+// PDF DOWNLOAD
+// ==============================
+function downloadPDF() {
+    const active = getActiveProfile();
+    if (!active) return alert("Create or select a salary profile first.");
+
+    if (currentVisibleList.length === 0) return alert("No visible entries to download.");
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    let totalIncome = 0;
+    let totalExpense = 0;
+    let running = 0;
+
+    const tableRows = currentVisibleList.map(e => {
+        const amount = Number(e.amount);
+        if (e.type === "income") {
+            totalIncome += amount;
+            running += amount;
+        } else {
+            totalExpense += amount;
+            running -= amount;
+        }
+
+        return [
+            e.date,
+            e.type.charAt(0).toUpperCase() + e.type.slice(1),
+            e.name,
+            `${e.type === "income" ? "+" : "-"}${formatAmount(amount)}`,
+            formatAmount(running)
+        ];
+    });
+
+    const finalBalance = totalIncome - totalExpense;
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Header background
+    doc.setFillColor(0, 204, 153);
+    doc.rect(0, 0, pageWidth, 30, "F");
+
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(20);
+    doc.setFont(undefined, "bold");
+    doc.text("Salary Expense Statement", 14, 14);
+
+    doc.setFontSize(10);
+    doc.setFont(undefined, "normal");
+    doc.text(`Profile: ${active.name}`, 14, 22);
+    doc.text(`Generated: ${todayDate()}`, pageWidth - 14, 22, { align: "right" });
+
+    // Summary boxes
+    const boxY = 38;
+    const boxW = 56;
+    const boxH = 18;
+
+    function summaryBox(x, title, value, fillColor) {
+        doc.setFillColor(...fillColor);
+        doc.roundedRect(x, boxY, boxW, boxH, 3, 3, "F");
+        doc.setTextColor(60, 60, 60);
+        doc.setFontSize(8);
+        doc.setFont(undefined, "normal");
+        doc.text(title, x + 4, boxY + 7);
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(12);
+        doc.setFont(undefined, "bold");
+        doc.text(`Rs ${value}`, x + 4, boxY + 14);
+    }
+
+    summaryBox(14, "TOTAL INCOME", formatAmount(totalIncome), [220, 255, 232]);
+    summaryBox(77, "TOTAL EXPENSES", formatAmount(totalExpense), [255, 228, 235]);
+    summaryBox(140, "BALANCE", formatAmount(finalBalance), [230, 242, 255]);
+
+    doc.autoTable({
+        startY: 66,
+        head: [["Date", "Type", "Name", "Amount", "Balance"]],
+        body: tableRows,
+        theme: "grid",
+        headStyles: {
+            fillColor: [0, 204, 153],
+            textColor: [0, 0, 0],
+            fontStyle: "bold",
+            halign: "center"
+        },
+        styles: {
+            fontSize: 9,
+            cellPadding: 3,
+            lineColor: [210, 210, 210],
+            lineWidth: 0.2,
+            valign: "middle"
+        },
+        alternateRowStyles: { fillColor: [250, 250, 250] },
+        columnStyles: {
+            0: { halign: "center", cellWidth: 26 },
+            1: { halign: "center", cellWidth: 24 },
+            2: { cellWidth: 62 },
+            3: { halign: "right", cellWidth: 34 },
+            4: { halign: "right", cellWidth: 34 }
+        },
+        didParseCell: function (data) {
+            if (data.section === "body") {
+                const type = data.row.raw[1].toLowerCase();
+                if (type === "income") {
+                    data.cell.styles.fillColor = [232, 255, 239]; // light green
+                }
+                if (type === "expense") {
+                    data.cell.styles.fillColor = [255, 235, 241]; // light pink
+                }
+            }
+        },
+        didDrawPage: function () {
+            const pageHeight = doc.internal.pageSize.getHeight();
+            doc.setFontSize(8);
+            doc.setTextColor(120, 120, 120);
+            doc.text(`Page ${doc.internal.getNumberOfPages()}`, pageWidth - 14, pageHeight - 10, { align: "right" });
+        }
+    });
+
+    const safeName = active.name.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+    doc.save(`${safeName}_statement.pdf`);
+}
+
+// ==============================
+// OLD DATA MIGRATION OPTIONAL
+// ==============================
+// If your previous version had entries in localStorage under "entries",
+// this will move them into one old profile only once.
+function migrateOldEntries() {
+    const oldEntries = JSON.parse(localStorage.getItem("entries")) || [];
+    const alreadyMigrated = localStorage.getItem("oldEntriesMigrated");
+
+    if (oldEntries.length > 0 && !alreadyMigrated && profiles.length === 0) {
+        const migratedProfile = {
+            id: generateId("p"),
+            name: "Old Entries",
+            createdDate: todayDate(),
+            entries: oldEntries.map((e, index) => ({
+                id: e.id || generateId("e") + index,
+                type: e.type,
+                name: e.name,
+                amount: Number(e.amount),
+                date: e.date
+            }))
+        };
+
+        profiles.push(migratedProfile);
+        activeProfileId = migratedProfile.id;
+        localStorage.setItem("oldEntriesMigrated", "yes");
+        saveProfiles();
+    }
+}
+
+// ==============================
+// INIT
+// ==============================
+migrateOldEntries();
+setupAmountCommaFormatting(profileSalary);
+setupAmountCommaFormatting(incomeAmount);
+setupAmountCommaFormatting(expenseAmount);
+
+if (!activeProfileId && profiles.length > 0) {
+    activeProfileId = profiles[0].id;
+    saveProfiles();
+}
+
+setAutoDates();
+
+window.addEventListener("focus", () => {
+    const today = todayDate();
+    incomeDate.value = today;
+    expenseDate.value = today;
+    profileDate.value = today;
+});
+
+document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+        const today = todayDate();
+        incomeDate.value = today;
+        expenseDate.value = today;
+        profileDate.value = today;
+    }
+});
+
+renderProfileDropdown();
+updateUI();
+</script>
+
+</body>
+</html>
